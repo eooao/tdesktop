@@ -2,7 +2,7 @@ name: Sync TDesktop Releases
 
 on:
   schedule:
-    - cron: "0 17 * * *"  # 每天北京时间凌晨 1 点执行
+    - cron: "0 17 * * *"  # 每天北京时间凌晨1点
   workflow_dispatch:
 
 jobs:
@@ -12,11 +12,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
       - name: Get latest upstream release
         id: upstream
-        uses: TheDoctor0/last-release-action@v2
-        with:
-          repo: telegramdesktop/tdesktop
+        run: |
+          LATEST=$(curl -s https://api.github.com/repos/telegramdesktop/tdesktop/releases/latest | jq -r .tag_name)
+          echo "release=$LATEST" >> $GITHUB_OUTPUT
 
       - name: Check if already exists in our repo
         id: check
