@@ -2,7 +2,7 @@ name: Sync TDesktop Releases
 
 on:
   schedule:
-    - cron: "0 17 * * *"   # 每天北京时间凌晨 1 点执行
+    - cron: "0 17 * * *"  # 每天北京时间 1:00
   workflow_dispatch:
 
 jobs:
@@ -10,16 +10,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Get latest upstream release
         id: upstream
-        uses: pozetroninc/github-action-get-latest-release@v1
+        uses: TheDoctor0/last-release-action@v2
         with:
-          repository: telegramdesktop/tdesktop
+          repo: telegramdesktop/tdesktop
 
-      - name: Check if release exists
+      - name: Check if already exists in our repo
         id: check
         run: |
           TAG="${{ steps.upstream.outputs.release }}"
@@ -31,25 +30,25 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Exit if this version already synced
+      - name: Exit if exists
         if: steps.check.outputs.exists == 'true'
-        run: echo "Already synced, no need to update."
+        run: echo "Already synced."
 
       - name: Download assets
         if: steps.check.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mkdir release
           gh release download "${{ steps.upstream.outputs.release }}" \
             -R telegramdesktop/tdesktop -D release
+
+      - name: Publish to our repo
+        if: steps.check.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish Release
-        if: steps.check.outputs.exists == 'false'
         run: |
           TAG="${{ steps.upstream.outputs.release }}"
           gh release create "$TAG" release/* \
             --title "$TAG" \
             --notes "Synced from Telegram Desktop official release."
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
