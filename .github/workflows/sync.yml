@@ -2,7 +2,7 @@ name: Sync TDesktop Releases
 
 on:
   schedule:
-    - cron: "0 17 * * *"  # 每天北京时间 1:00
+    - cron: "0 17 * * *"  # 每天北京时间凌晨 1 点执行
   workflow_dispatch:
 
 jobs:
@@ -20,6 +20,8 @@ jobs:
 
       - name: Check if already exists in our repo
         id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${{ steps.upstream.outputs.release }}"
           if gh release view "$TAG" >/dev/null 2>&1; then
@@ -27,8 +29,6 @@ jobs:
           else
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Exit if exists
         if: steps.check.outputs.exists == 'true'
